@@ -1,0 +1,5 @@
+export const QUESTIONS_DEFAULT_PAGE = 1;
+
+export const QUESTIONS_DEFAULT_LIMIT = 10;
+
+export const QUESTIONS_MAX_LIMIT = 100;

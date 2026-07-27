@@ -1,0 +1,5 @@
+export const INSTITUTES_DEFAULT_PAGE = 1;
+
+export const INSTITUTES_DEFAULT_LIMIT = 10;
+
+export const INSTITUTES_MAX_LIMIT = 100;

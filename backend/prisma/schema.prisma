@@ -1,0 +1,532 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url      = env("DATABASE_URL")
+  // Note: Database URL is handled in prisma.config.ts for Prisma 7+
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  INSTITUTE
+  ADMIN
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+}
+
+enum ExamStatus {
+  DRAFT
+  SCHEDULED
+  LIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum QuestionType {
+  MCQ
+  MULTIPLE_SELECT
+  TRUE_FALSE
+  NUMERICAL
+  SHORT_ANSWER
+  LONG_ANSWER
+  CODING
+}
+
+enum AttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  AUTO_SUBMITTED
+  EVALUATED
+}
+
+enum DifficultyLevel {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum BloomLevel {
+  REMEMBER
+  UNDERSTAND
+  APPLY
+  ANALYZE
+  EVALUATE
+  CREATE
+}
+
+enum DocumentStatus {
+  UPLOADED
+  READY_FOR_PROCESSING
+  QUEUED
+  OCR_RUNNING
+  AI_RUNNING
+  REVIEW_PENDING
+  APPROVED
+  FAILED
+  ARCHIVED
+}
+
+enum ProcessingStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum AIReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  passwordHash   String?
+  avatar         String?
+  role           UserRole        @default(STUDENT)
+  authProvider   AuthProvider    @default(EMAIL)
+  googleId       String?         @unique
+  emailVerified  Boolean         @default(false)
+  isActive       Boolean         @default(true)
+  instituteId    String?
+  institute      Institute?      @relation(fields: [instituteId], references: [id])
+  refreshTokens  RefreshToken[]
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
+
+  uploadedDocuments UploadedDocument[]
+
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  reviewedAIQuestions AIExtractedQuestion[] @relation("QuestionReviewer")
+  questions            Question[]
+  createdExams         Exam[]
+}
+
+model Institute {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  email     String?
+  phone     String?
+  website   String?
+  logo      String?
+  address   String?
+  users     User[]
+  batches   Batch[]
+  courses   Course[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Batch {
+  id String @id @default(cuid())
+
+  name        String
+  code        String? @unique
+  description String?
+
+  academicYear String?
+  semester     Int?
+
+  startDate DateTime?
+  endDate   DateTime?
+
+  isActive Boolean @default(true)
+
+  instituteId String
+  institute   Institute @relation(fields: [instituteId], references: [id])
+
+  students  StudentProfile[]
+  courses   Course[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String
+  code        String?  @unique
+  description String?
+  isActive    Boolean  @default(true)
+  courses     Course[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model StudentProfile {
+  id           String        @id @default(cuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batchId      String?
+  batch        Batch?        @relation(fields: [batchId], references: [id])
+  rollNumber   String?
+  semester     Int?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  examAttempts ExamAttempt[]
+}
+
+model TeacherProfile {
+  id            String  @id @default(cuid())
+  userId        String  @unique
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  designation   String?
+  qualification String?
+  experience    Int?
+
+  courses Course[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id String @id @default(cuid())
+
+  name        String
+  code        String  @unique
+  description String?
+
+  instituteId String
+  institute   Institute @relation(fields: [instituteId], references: [id])
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  teacherId String
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id])
+
+  batchId String
+  batch   Batch  @relation(fields: [batchId], references: [id])
+
+  academicYear String?
+  semester     Int?
+
+  credits Int?
+
+  exams Exam[]
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Exam {
+  id String @id @default(cuid())
+
+  title       String
+  description String?
+
+  instructions String?
+
+  courseId String?
+  course   Course? @relation(fields: [courseId], references: [id])
+
+  // For student self-created practice exams, which aren't tied to any
+  // course. createdByUserId tracks who made it (student or staff);
+  // isPractice distinguishes these from real course exams.
+  createdByUserId String?
+  createdBy       User?   @relation(fields: [createdByUserId], references: [id])
+  isPractice      Boolean @default(false)
+
+  startTime DateTime
+  endTime   DateTime
+
+  durationMinutes Int
+
+  totalMarks Int
+
+  passingMarks Int
+
+  negativeMarking Boolean @default(false)
+
+  shuffleQuestions Boolean @default(false)
+
+  shuffleOptions Boolean @default(false)
+
+  showResultImmediately Boolean @default(false)
+
+  maxAttempts Int @default(1)
+
+  status ExamStatus @default(DRAFT)
+
+  isPublished Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  examQuestions ExamQuestion[]
+  attempts      ExamAttempt[]
+}
+
+model Question {
+  id String @id @default(cuid())
+
+  title       String
+  description String?
+
+  type QuestionType
+
+  difficulty DifficultyLevel @default(MEDIUM)
+
+  bloomLevel BloomLevel?
+
+  chapter String?
+  topic   String?
+
+  explanation String?
+  solution    String?
+
+  marks         Int?
+  negativeMarks Float?  @default(0)
+  estimatedTime Int?
+  source        String?
+  year          Int?
+  language      String  @default("English")
+
+  tags String[]
+
+  aiGenerated Boolean @default(false)
+
+  imageUrl     String?
+  latexContent String?
+  codeSnippet  String?
+
+  createdById String
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  options QuestionOption[]
+
+  examQuestions ExamQuestion[]
+
+  answers StudentAnswer[]
+
+  aiExtractions AIExtractedQuestion[]
+}
+
+model ExamQuestion {
+  id String @id @default(cuid())
+
+  examId String
+  exam   Exam   @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+
+  marks Float
+
+  negativeMarks Float @default(0)
+
+  displayOrder Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([examId, questionId])
+}
+
+model QuestionOption {
+  id String @id @default(cuid())
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  optionText String
+
+  imageUrl String?
+
+  isCorrect Boolean
+
+  displayOrder Int
+
+  createdAt DateTime @default(now())
+}
+
+model ExamAttempt {
+  id String @id @default(cuid())
+
+  examId String
+  exam   Exam   @relation(fields: [examId], references: [id])
+
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+
+  status AttemptStatus @default(IN_PROGRESS)
+
+  startedAt DateTime
+
+  submittedAt DateTime?
+
+  score Float?
+
+  createdAt DateTime @default(now())
+
+  answers StudentAnswer[]
+}
+
+model StudentAnswer {
+  id String @id @default(cuid())
+
+  attemptId String
+  attempt   ExamAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+
+  answer Json?
+
+  obtainedMarks Float?
+
+  evaluated Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([attemptId, questionId])
+}
+
+model UploadedDocument {
+  id String @id @default(cuid())
+
+  originalName String
+  storedName   String
+
+  mimeType String
+
+  extension String
+
+  fileSize Int
+
+  checksum String?
+
+  storagePath String
+
+  pageCount Int?
+
+  status DocumentStatus @default(UPLOADED)
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  processingJobs ProcessingJob[]
+
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  aiextractedQuestions AIExtractedQuestion[]
+}
+
+model ProcessingJob {
+  id String @id @default(cuid())
+
+  documentId String
+
+  document UploadedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  status ProcessingStatus @default(QUEUED)
+
+  progress Int @default(0)
+
+  currentStep String?
+
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  completedAt        DateTime?
+  extractedQuestions AIExtractedQuestion[]
+}
+
+model AIExtractedQuestion {
+  id              String           @id @default(cuid())
+  processingJobId String
+  processingJob   ProcessingJob    @relation(fields: [processingJobId], references: [id], onDelete: Cascade)
+
+  documentId      String
+  document        UploadedDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  questionNumber  Int
+  questionType    QuestionType 
+
+  subject         String?
+  chapter         String?
+  topic           String?
+
+  difficulty      DifficultyLevel? 
+
+  marks           Int?
+  negativeMarks   Int?
+  questionText    String           @db.Text
+
+  options         AIExtractedQuestionOption[]
+
+  approvedAt            DateTime?
+  publishedQuestionId   String?
+  publishedQuestion     Question?    @relation(fields: [publishedQuestionId], references: [id])
+
+  answer          Json? 
+  explanation     String?          @db.Text
+
+  confidence      Float            @default(0) 
+
+  status          AIReviewStatus   @default(PENDING)
+  
+  reviewedById    String?
+  reviewedBy      User?            @relation("QuestionReviewer", fields: [reviewedById], references: [id])
+  reviewedAt      DateTime?
+
+  provider         String
+  modelName        String
+  processingTimeMs Int?
+  promptVersion    String?
+  
+  reviewNotes      String?          @db.Text
+  reviewComment    String?          @db.Text 
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model AIExtractedQuestionOption {
+  id String @id @default(cuid())
+
+  extractedQuestionId String
+
+  extractedQuestion AIExtractedQuestion @relation(fields: [extractedQuestionId], references: [id], onDelete: Cascade)
+
+  optionText String
+  imageUrl   String?
+
+  isCorrect Boolean
+
+  displayOrder Int
+
+  createdAt DateTime @default(now())
+}

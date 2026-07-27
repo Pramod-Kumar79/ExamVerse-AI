@@ -1,0 +1,36 @@
+{
+  "questions": [
+    {
+      "questionNumber": 1,
+      "questionType": "MCQ",
+      "subject": "Physics",
+      "chapter": "Electrostatics",
+      "topic": "Coulomb Law",
+      "difficulty": "MEDIUM",
+      "marks": 4,
+      "negativeMarks": 1,
+      "questionText": "Two charges are placed at a distance d...",
+      "options": [
+        {
+          "label": "A",
+          "text": "Option A"
+        },
+        {
+          "label": "B",
+          "text": "Option B"
+        },
+        {
+          "label": "C",
+          "text": "Option C"
+        },
+        {
+          "label": "D",
+          "text": "Option D"
+        }
+      ],
+      "answer": "A",
+      "explanation": "By applying Coulomb's law...",
+      "confidence": 0.97
+    }
+  ]
+}

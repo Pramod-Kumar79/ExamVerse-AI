@@ -1,0 +1,5 @@
+export const PROCESSING_DEFAULT_PAGE = 1;
+
+export const PROCESSING_DEFAULT_LIMIT = 10;
+
+export const PROCESSING_MAX_LIMIT = 100;
