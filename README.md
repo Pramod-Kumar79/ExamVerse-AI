@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
 
 # 🧭 ExamVerse AI
 
@@ -635,4 +635,4 @@ ISC
 [Report Bug](../../issues) · [Request Feature](../../issues)
 
 </div>
-]]>
+
