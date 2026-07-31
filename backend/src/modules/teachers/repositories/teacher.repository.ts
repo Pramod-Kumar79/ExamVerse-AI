@@ -14,9 +14,26 @@ export class TeacherRepository implements ITeacherRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async create(data: CreateTeacherDto): Promise<TeacherProfile> {
-    return this.prisma.teacherProfile.create({
-      data,
-    });
+    return this.prisma.$transaction(
+      async (tx) => {
+        // 1. Update user's role to TEACHER
+        await tx.user.update({
+          where: { id: data.userId },
+          data: { role: "TEACHER" },
+        });
+
+        // 2. Remove any existing student profile for this user
+        await tx.studentProfile.deleteMany({
+          where: { userId: data.userId },
+        });
+
+        // 3. Create and return the teacher profile
+        return tx.teacherProfile.create({
+          data,
+        });
+      },
+      { timeout: 20000 },
+    );
   }
 
   async findById(id: string): Promise<TeacherProfile | null> {
@@ -131,8 +148,29 @@ export class TeacherRepository implements ITeacherRepository {
   }
 
   async delete(id: string): Promise<TeacherProfile> {
-    return this.prisma.teacherProfile.delete({
-      where: { id },
-    });
+    return this.prisma.$transaction(
+      async (tx) => {
+        const teacher = await tx.teacherProfile.findUnique({
+          where: { id },
+          select: { userId: true },
+        });
+
+        if (teacher?.userId) {
+          await tx.user.update({
+            where: { id: teacher.userId },
+            data: { role: "STUDENT" },
+          });
+        }
+
+        await tx.course.deleteMany({
+          where: { teacherId: id },
+        });
+
+        return tx.teacherProfile.delete({
+          where: { id },
+        });
+      },
+      { timeout: 20000 },
+    );
   }
 }

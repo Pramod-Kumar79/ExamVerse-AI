@@ -2,6 +2,8 @@ import request from "supertest";
 import app from "../app";
 import { prisma } from "../lib/prisma";
 
+jest.setTimeout(30000);
+
 describe("Teacher API", () => {
   let accessToken: string;
   let teacherUserId: string;
@@ -137,15 +139,54 @@ it("should reject unauthorized request", async () => {
   expect(response.body.success).toBe(false);
 });
 
-it("should reject invalid payload", async () => {
-  const response = await request(app)
-    .post("/api/teachers")
-    .set("Authorization", `Bearer ${accessToken}`)
-    .send({});
+  it("should reject invalid payload", async () => {
+    const response = await request(app)
+      .post("/api/teachers")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({});
 
-  expect(response.status).toBe(400);
+    expect(response.status).toBe(400);
 
-  expect(response.body.success).toBe(false);
-});
+    expect(response.body.success).toBe(false);
+  });
 
+  it("should convert registered student role to TEACHER when creating teacher profile", async () => {
+    const studentUser = await prisma.user.create({
+      data: {
+        name: "Registered Student",
+        email: `student_to_teacher_${Date.now()}@example.com`,
+        passwordHash: "dummy",
+        role: "STUDENT",
+      },
+    });
+
+    const response = await request(app)
+      .post("/api/teachers")
+      .set("Authorization", `Bearer ${accessToken}`)
+      .send({
+        userId: studentUser.id,
+        designation: "Lecturer",
+        qualification: "M.Sc",
+        experience: 2,
+      });
+
+    expect(response.status).toBe(201);
+
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: studentUser.id },
+    });
+    expect(updatedUser?.role).toBe("TEACHER");
+
+    // Delete teacher profile and verify user role reverts to STUDENT
+    const teacherIdToDelete = response.body.data.id;
+    const deleteRes = await request(app)
+      .delete(`/api/teachers/${teacherIdToDelete}`)
+      .set("Authorization", `Bearer ${accessToken}`);
+    expect(deleteRes.status).toBe(200);
+
+    const revertedUser = await prisma.user.findUnique({
+      where: { id: studentUser.id },
+    });
+    expect(revertedUser?.role).toBe("STUDENT");
+  });
 });

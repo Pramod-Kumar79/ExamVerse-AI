@@ -51,26 +51,32 @@ export interface PaginatedExams {
   pagination: PaginationDto;
 }
 
+export interface RequestingUser {
+  id: string;
+  role: string;
+  instituteId?: string | null;
+}
+
 export interface IExamService {
-  create(dto: CreateExamDto): Promise<Exam>;
+  create(dto: CreateExamDto, createdByUserId?: string): Promise<Exam>;
 
   createPracticeExam(userId: string, dto: CreatePracticeExamDto): Promise<Exam>;
 
   listMyPracticeExams(userId: string): Promise<Exam[]>;
 
-  getById(id: string): Promise<Exam>;
+  getById(id: string, requestingUser?: RequestingUser): Promise<Exam>;
 
-  update(id: string, dto: UpdateExamDto): Promise<Exam>;
+  update(id: string, dto: UpdateExamDto, requestingUser?: RequestingUser): Promise<Exam>;
 
-  list(query: QueryExamsDto): Promise<PaginatedExams>;
+  list(query: QueryExamsDto, requestingUser?: RequestingUser): Promise<PaginatedExams>;
 
-  delete(id: string): Promise<void>;
+  delete(id: string, requestingUser?: RequestingUser): Promise<void>;
 
-  attachQuestions(examId: string, questionIds: string[]): Promise<void>;
+  attachQuestions(examId: string, questionIds: string[], requestingUser?: RequestingUser): Promise<void>;
 
-  removeQuestion(examId: string, questionId: string): Promise<void>;
+  removeQuestion(examId: string, questionId: string, requestingUser?: RequestingUser): Promise<void>;
 
-  reorderQuestions(examId: string, dto: ReorderExamQuestionsDto): Promise<void>;
+  reorderQuestions(examId: string, dto: ReorderExamQuestionsDto, requestingUser?: RequestingUser): Promise<void>;
 
-  getPreview(examId: string): Promise<Exam>;
+  getPreview(examId: string, requestingUser?: RequestingUser): Promise<Exam>;
 }

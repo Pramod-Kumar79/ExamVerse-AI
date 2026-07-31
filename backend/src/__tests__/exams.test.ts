@@ -2,7 +2,7 @@ import request from "supertest";
 import app from "../app";
 import { prisma } from "../lib/prisma";
 
-// jest.setTimeout(30000);
+jest.setTimeout(30000);
 
 describe("Exam API", () => {
   let accessToken: string;
@@ -291,12 +291,90 @@ describe("Exam API", () => {
    expect(response.body.success).toBe(false);
  });
 
- it("should reject unauthorized request", async () => {
-   const response = await request(app).get("/api/exams");
+  it("should reject unauthorized request", async () => {
+    const response = await request(app).get("/api/exams");
 
-   expect(response.status).toBe(401);
+    expect(response.status).toBe(401);
 
-   expect(response.body.success).toBe(false);
- });
+    expect(response.body.success).toBe(false);
+  });
 
+  it("should isolate exams between different teachers", async () => {
+    // 1. Create Teacher A user & login
+    const emailA = `exam_teacher_a_${Date.now()}@example.com`;
+    const regA = await request(app).post("/api/auth/register").send({
+      name: "Exam Teacher A",
+      email: emailA,
+      password: "Password@123",
+    });
+    const userIdA = regA.body.data.user.id;
+    await prisma.user.update({ where: { id: userIdA }, data: { role: "TEACHER" } });
+    const loginA = await request(app).post("/api/auth/login").send({ email: emailA, password: "Password@123" });
+    const tokenA = loginA.body.data.accessToken;
+
+    // 2. Create Teacher B user & login
+    const emailB = `exam_teacher_b_${Date.now()}@example.com`;
+    const regB = await request(app).post("/api/auth/register").send({
+      name: "Exam Teacher B",
+      email: emailB,
+      password: "Password@123",
+    });
+    const userIdB = regB.body.data.user.id;
+    await prisma.user.update({ where: { id: userIdB }, data: { role: "TEACHER" } });
+    const loginB = await request(app).post("/api/auth/login").send({ email: emailB, password: "Password@123" });
+    const tokenB = loginB.body.data.accessToken;
+
+    const start = new Date(Date.now() + 3600000);
+    const end = new Date(start.getTime() + 7200000);
+
+    // 3. Teacher A creates Exam A
+    const resA = await request(app)
+      .post("/api/exams")
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({
+        title: "Exam by Teacher A",
+        courseId,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        durationMinutes: 60,
+        totalMarks: 50,
+        passingMarks: 20,
+      });
+    expect(resA.status).toBe(201);
+    const examAId = resA.body.data.id;
+
+    // 4. Teacher B creates Exam B
+    const resB = await request(app)
+      .post("/api/exams")
+      .set("Authorization", `Bearer ${tokenB}`)
+      .send({
+        title: "Exam by Teacher B",
+        courseId,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        durationMinutes: 60,
+        totalMarks: 50,
+        passingMarks: 20,
+      });
+    expect(resB.status).toBe(201);
+    const examBId = resB.body.data.id;
+
+    // 5. Teacher A lists exams -> sees examAId, not examBId
+    const listA = await request(app).get("/api/exams").set("Authorization", `Bearer ${tokenA}`);
+    const idsA = listA.body.data.exams.map((e: any) => e.id);
+    expect(idsA).toContain(examAId);
+    expect(idsA).not.toContain(examBId);
+
+    // 6. Teacher B lists exams -> sees examBId, not examAId
+    const listB = await request(app).get("/api/exams").set("Authorization", `Bearer ${tokenB}`);
+    const idsB = listB.body.data.exams.map((e: any) => e.id);
+    expect(idsB).toContain(examBId);
+    expect(idsB).not.toContain(examAId);
+
+    // 7. Teacher A tries to view Exam B -> 403 Forbidden
+    const forbiddenRes = await request(app)
+      .get(`/api/exams/${examBId}`)
+      .set("Authorization", `Bearer ${tokenA}`);
+    expect(forbiddenRes.status).toBe(403);
+  });
 });

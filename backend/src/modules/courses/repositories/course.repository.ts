@@ -55,7 +55,7 @@ export class CourseRepository implements ICourseRepository {
       batchId: query.batchId,
       semester: query.semester,
       academicYear: query.academicYear,
-      isActive: query.isActive,
+      isActive: query.isActive ?? true,
 
       ...(query.search && {
         OR: [
@@ -107,7 +107,7 @@ export class CourseRepository implements ICourseRepository {
       batchId: query.batchId,
       semester: query.semester,
       academicYear: query.academicYear,
-      isActive: query.isActive,
+      isActive: query.isActive ?? true,
 
       ...(query.search && {
         OR: [

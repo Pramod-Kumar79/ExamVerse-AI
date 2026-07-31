@@ -44,7 +44,7 @@ export class SubjectRepository implements ISubjectRepository {
     const { page, limit } = resolvePagination(query.page, query.limit);
 
     const where: Prisma.SubjectWhereInput = {
-      isActive,
+      isActive: isActive ?? true,
       ...(search && {
         OR: [
           {
@@ -77,7 +77,7 @@ export class SubjectRepository implements ISubjectRepository {
     const { search, isActive } = query;
 
     const where: Prisma.SubjectWhereInput = {
-      isActive,
+      isActive: isActive ?? true,
       ...(search && {
         OR: [
           {

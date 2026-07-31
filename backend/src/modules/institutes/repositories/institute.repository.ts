@@ -99,10 +99,27 @@ export class InstituteRepository implements IInstituteRepository {
   }
 
   async delete(id: string): Promise<Institute> {
-    return this.prisma.institute.delete({
-      where: {
-        id,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Unlink users from this institute
+      await tx.user.updateMany({
+        where: { instituteId: id },
+        data: { instituteId: null },
+      });
+
+      // 2. Delete courses associated with this institute
+      await tx.course.deleteMany({
+        where: { instituteId: id },
+      });
+
+      // 3. Delete batches associated with this institute
+      await tx.batch.deleteMany({
+        where: { instituteId: id },
+      });
+
+      // 4. Delete the institute itself
+      return tx.institute.delete({
+        where: { id },
+      });
     });
   }
 }

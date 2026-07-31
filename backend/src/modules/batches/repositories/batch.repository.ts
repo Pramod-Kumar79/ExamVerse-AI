@@ -43,7 +43,7 @@ export class BatchRepository implements IBatchRepository {
       instituteId,
       academicYear,
       semester,
-      isActive,
+      isActive: isActive ?? true,
 
       ...(search && {
         OR: [
@@ -83,7 +83,7 @@ export class BatchRepository implements IBatchRepository {
       instituteId,
       academicYear,
       semester,
-      isActive,
+      isActive: isActive ?? true,
 
       ...(search && {
         OR: [

@@ -137,12 +137,71 @@ it("should reject MCQ without explanation", async () => {
   expect(response.body.success).toBe(false);
 });
 
-it("should reject unauthorized request", async () => {
-  const response = await request(app).get("/api/questions");
+  it("should reject unauthorized request", async () => {
+    const response = await request(app).get("/api/questions");
 
-  expect(response.status).toBe(401);
+    expect(response.status).toBe(401);
 
-  expect(response.body.success).toBe(false);
-});
+    expect(response.body.success).toBe(false);
+  });
 
+  it("should isolate question banks between different teachers", async () => {
+    // 1. Create Teacher A & login
+    const emailA = `teachera_${Date.now()}@example.com`;
+    const regA = await request(app).post("/api/auth/register").send({
+      name: "Teacher A",
+      email: emailA,
+      password: "Password@123",
+    });
+    const userIdA = regA.body.data.user.id;
+    await prisma.user.update({ where: { id: userIdA }, data: { role: "TEACHER" } });
+    const loginA = await request(app).post("/api/auth/login").send({ email: emailA, password: "Password@123" });
+    const tokenA = loginA.body.data.accessToken;
+
+    // 2. Create Teacher B & login
+    const emailB = `teacherb_${Date.now()}@example.com`;
+    const regB = await request(app).post("/api/auth/register").send({
+      name: "Teacher B",
+      email: emailB,
+      password: "Password@123",
+    });
+    const userIdB = regB.body.data.user.id;
+    await prisma.user.update({ where: { id: userIdB }, data: { role: "TEACHER" } });
+    const loginB = await request(app).post("/api/auth/login").send({ email: emailB, password: "Password@123" });
+    const tokenB = loginB.body.data.accessToken;
+
+    // 3. Teacher A creates question QA
+    const qA = await request(app)
+      .post("/api/questions")
+      .set("Authorization", `Bearer ${tokenA}`)
+      .send({ title: "Question by Teacher A", type: "SHORT_ANSWER" });
+    expect(qA.status).toBe(201);
+    const qAId = qA.body.data.id;
+
+    // 4. Teacher B creates question QB
+    const qB = await request(app)
+      .post("/api/questions")
+      .set("Authorization", `Bearer ${tokenB}`)
+      .send({ title: "Question by Teacher B", type: "SHORT_ANSWER" });
+    expect(qB.status).toBe(201);
+    const qBId = qB.body.data.id;
+
+    // 5. Teacher A lists questions -> sees qAId, not qBId
+    const listA = await request(app).get("/api/questions").set("Authorization", `Bearer ${tokenA}`);
+    const idsA = listA.body.data.questions.map((q: any) => q.id);
+    expect(idsA).toContain(qAId);
+    expect(idsA).not.toContain(qBId);
+
+    // 6. Teacher B lists questions -> sees qBId, not qAId
+    const listB = await request(app).get("/api/questions").set("Authorization", `Bearer ${tokenB}`);
+    const idsB = listB.body.data.questions.map((q: any) => q.id);
+    expect(idsB).toContain(qBId);
+    expect(idsB).not.toContain(qAId);
+
+    // 7. Teacher A tries to view Teacher B's question -> 403 Forbidden
+    const forbiddenRes = await request(app)
+      .get(`/api/questions/${qBId}`)
+      .set("Authorization", `Bearer ${tokenA}`);
+    expect(forbiddenRes.status).toBe(403);
+  });
 });

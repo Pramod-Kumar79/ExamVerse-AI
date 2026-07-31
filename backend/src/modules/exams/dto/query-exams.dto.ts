@@ -12,4 +12,12 @@ export interface QueryExamsDto {
   status?: ExamStatus;
 
   isPublished?: boolean;
+
+  isPractice?: boolean;
+
+  creatorUserId?: string;
+
+  teacherUserId?: string;
+
+  instituteId?: string;
 }
