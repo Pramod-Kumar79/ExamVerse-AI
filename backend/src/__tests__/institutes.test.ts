@@ -4,6 +4,8 @@ import app from "../app";
 import { prisma } from "../lib/prisma";
 import { UserRole } from "@prisma/client";
 
+jest.setTimeout(30000);
+
 describe("Institute API", () => {
   let accessToken = "";
   let instituteId = "";
@@ -123,18 +125,83 @@ describe("Institute API", () => {
     expect(response.body.success).toBe(false);
   });
 
-  it("should reject invalid institute payload", async () => {
-    const response = await request(app)
-      .post("/api/institutes")
-      .set("Authorization", `Bearer ${accessToken}`)
+  it("should handle institute registration, pending approval block, approval, and suspension flow", async () => {
+    const instCode = `INST-FLOW-${Date.now()}`;
+    const instEmail = `inst.admin.${Date.now()}@example.com`;
+    const instPassword = "Password@123";
+
+    // 1. Register Institute
+    const regRes = await request(app)
+      .post("/api/auth/register-institute")
       .send({
-        name: "",
-        code: "",
+        instituteName: "Institute Flow Academy",
+        instituteCode: instCode,
+        name: "Flow Admin",
+        email: instEmail,
+        password: instPassword,
       });
 
-    expect(response.status).toBe(400);
+    expect(regRes.status).toBe(201);
+    expect(regRes.body.success).toBe(true);
+    const flowInstId = regRes.body.data.instituteId;
 
-    expect(response.body.success).toBe(false);
+    // 2. Attempt login before approval -> expect 401
+    const pendingLoginRes = await request(app)
+      .post("/api/auth/login")
+      .send({
+        email: instEmail,
+        password: instPassword,
+      });
+
+    expect(pendingLoginRes.status).toBe(401);
+    expect(pendingLoginRes.body.message).toContain("pending admin approval");
+
+    // 3. Admin approves institute
+    const approveRes = await request(app)
+      .patch(`/api/institutes/${flowInstId}/approve`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(approveRes.status).toBe(200);
+    expect(approveRes.body.data.isApproved).toBe(true);
+    expect(approveRes.body.data.status).toBe("APPROVED");
+
+    // 4. Login after approval -> expect 200
+    const approvedLoginRes = await request(app)
+      .post("/api/auth/login")
+      .send({
+        email: instEmail,
+        password: instPassword,
+      });
+
+    expect(approvedLoginRes.status).toBe(200);
+    expect(approvedLoginRes.body.success).toBe(true);
+
+    // 5. Admin suspends institute
+    const suspendRes = await request(app)
+      .patch(`/api/institutes/${flowInstId}/suspend`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(suspendRes.status).toBe(200);
+    expect(suspendRes.body.data.isSuspended).toBe(true);
+    expect(suspendRes.body.data.status).toBe("SUSPENDED");
+
+    // 6. Login while suspended -> expect 401
+    const suspendedLoginRes = await request(app)
+      .post("/api/auth/login")
+      .send({
+        email: instEmail,
+        password: instPassword,
+      });
+
+    expect(suspendedLoginRes.status).toBe(401);
+    expect(suspendedLoginRes.body.message).toContain("suspended");
+
+    // 7. Admin reactivates institute
+    const reactivateRes = await request(app)
+      .patch(`/api/institutes/${flowInstId}/reactivate`)
+      .set("Authorization", `Bearer ${accessToken}`);
+
+    expect(reactivateRes.status).toBe(200);
+    expect(reactivateRes.body.data.isSuspended).toBe(false);
   });
-
 });

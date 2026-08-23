@@ -166,39 +166,48 @@ import { Card } from "@/components/ui/Misc";
 const ADMIN_LINKS = [
   {
     href: "/institutes",
-    label: "Institutes",
+    label: "Institutes Management",
     icon: "🏛️",
-    desc: "Manage institutes on the platform.",
+    desc: "Manage platform institutes, review registration requests, approve, or suspend accounts.",
+  },
+];
+
+const INSTITUTE_LINKS = [
+  {
+    href: "/institutes",
+    label: "My Institute",
+    icon: "🏛️",
+    desc: "View and manage your institute details.",
   },
   {
     href: "/subjects",
     label: "Subjects",
     icon: "📚",
-    desc: "Define the subjects taught.",
+    desc: "Define and manage subjects taught in your institute.",
   },
   {
     href: "/batches",
     label: "Batches",
     icon: "🎓",
-    desc: "Organize students into batches.",
+    desc: "Organize institute students into academic batches.",
   },
   {
     href: "/teachers",
     label: "Teachers",
     icon: "🧑‍🏫",
-    desc: "Manage teacher profiles.",
+    desc: "Manage teacher profiles and course assignments.",
   },
   {
     href: "/students",
     label: "Students",
     icon: "🧑‍🎓",
-    desc: "Manage student profiles.",
+    desc: "Manage student profiles enrolled in your institute.",
   },
   {
     href: "/courses",
     label: "Courses",
     icon: "📖",
-    desc: "Link subjects, batches & teachers.",
+    desc: "Link subjects, batches & teachers for your institute.",
   },
 ];
 
@@ -271,11 +280,13 @@ const STUDENT_LINKS = [
 export default function DashboardPage() {
   const { user } = useAuth();
   const links =
-    user?.role === "ADMIN" || user?.role === "INSTITUTE"
+    user?.role === "ADMIN"
       ? ADMIN_LINKS
+      : user?.role === "INSTITUTE"
+      ? INSTITUTE_LINKS
       : user?.role === "TEACHER"
-        ? TEACHER_LINKS
-        : STUDENT_LINKS;
+      ? TEACHER_LINKS
+      : STUDENT_LINKS;
 
   return (
     <div className="flex flex-col gap-6">
@@ -285,8 +296,12 @@ export default function DashboardPage() {
         </h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Here&apos;s a quick overview of what you can do as{" "}
-          {["ADMIN", "INSTITUTE"].includes(user?.role || "") ? "an" : "a"}{" "}
-          {user?.role?.toLowerCase()}.
+          {user?.role === "ADMIN"
+            ? "a platform admin"
+            : user?.role === "INSTITUTE"
+            ? "an institute manager"
+            : `a ${user?.role?.toLowerCase()}`}
+          .
         </p>
       </div>
 

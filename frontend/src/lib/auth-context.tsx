@@ -15,6 +15,16 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (name: string, email: string, password: string) => Promise<User>;
+  registerInstitute: (payload: {
+    instituteName: string;
+    instituteCode: string;
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    website?: string;
+    address?: string;
+  }) => Promise<{ message: string; instituteId: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -70,6 +80,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
+  const registerInstitute = useCallback(
+    async (payload: {
+      instituteName: string;
+      instituteCode: string;
+      name: string;
+      email: string;
+      password: string;
+      phone?: string;
+      website?: string;
+      address?: string;
+    }) => {
+      return api.post<{ message: string; instituteId: string }>(
+        "/auth/register-institute",
+        payload,
+        { skipAuth: true },
+      );
+    },
+    [],
+  );
+
   const logout = useCallback(async () => {
     try {
       await api.post("/auth/logout");
@@ -82,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, register, logout, refreshUser }}
+      value={{ user, loading, login, register, registerInstitute, logout, refreshUser }}
     >
       {children}
     </AuthContext.Provider>

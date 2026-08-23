@@ -85,4 +85,6 @@ export interface QueryQuestionsDto {
   scope?: QuestionScope;
 
   ownerId?: string;
+
+  instituteId?: string;
 }

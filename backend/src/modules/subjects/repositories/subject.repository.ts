@@ -39,12 +39,19 @@ export class SubjectRepository implements ISubjectRepository {
   }
 
   async findMany(query: QuerySubjectsDto): Promise<Subject[]> {
-    const { search, isActive } = query;
+    const { search, isActive, instituteId } = query;
 
     const { page, limit } = resolvePagination(query.page, query.limit);
 
     const where: Prisma.SubjectWhereInput = {
       isActive: isActive ?? true,
+      ...(instituteId && {
+        courses: {
+          some: {
+            instituteId,
+          },
+        },
+      }),
       ...(search && {
         OR: [
           {
@@ -74,10 +81,17 @@ export class SubjectRepository implements ISubjectRepository {
   }
 
   async count(query: QuerySubjectsDto): Promise<number> {
-    const { search, isActive } = query;
+    const { search, isActive, instituteId } = query;
 
     const where: Prisma.SubjectWhereInput = {
       isActive: isActive ?? true,
+      ...(instituteId && {
+        courses: {
+          some: {
+            instituteId,
+          },
+        },
+      }),
       ...(search && {
         OR: [
           {

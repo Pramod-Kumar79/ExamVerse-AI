@@ -34,8 +34,13 @@ export class ProcessingJobService implements IProcessingJobService {
       throw new NotFoundError("Document not found.");
     }
 
-    if (document.status === DocumentStatus.QUEUED) {
-      throw new BadRequestError("Document is already queued.");
+    if (
+      document.status !== DocumentStatus.UPLOADED &&
+      document.status !== DocumentStatus.READY_FOR_PROCESSING
+    ) {
+      throw new BadRequestError(
+        "Document has already been processed or is currently in progress.",
+      );
     }
 
     const job = await this.processingRepository.create({

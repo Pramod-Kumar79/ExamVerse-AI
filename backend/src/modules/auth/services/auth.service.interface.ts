@@ -2,6 +2,7 @@ import type { UserResponseDto } from "../../../common/dto";
 
 import type { LoginDto } from "../dto/login.dto";
 import type { RegisterDto } from "../dto/register.dto";
+import type { RegisterInstituteDto } from "../dto/register-institute.dto";
 
 export interface AuthTokens {
   accessToken: string;
@@ -15,6 +16,8 @@ export interface AuthResult {
 
 export interface IAuthService {
   register(dto: RegisterDto): Promise<AuthResult>;
+
+  registerInstitute(dto: RegisterInstituteDto): Promise<{ message: string; instituteId: string }>;
 
   login(dto: LoginDto): Promise<AuthResult>;
 

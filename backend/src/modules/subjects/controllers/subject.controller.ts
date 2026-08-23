@@ -5,6 +5,8 @@ import { ApiResponse } from "../../../common/response";
 
 import type { ISubjectService } from "../services";
 
+import { UserRole } from "@prisma/client";
+
 export class SubjectController {
   constructor(private readonly subjectService: ISubjectService) {}
 
@@ -44,6 +46,11 @@ export class SubjectController {
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
+    const scopedInstituteId =
+      req.user?.role === UserRole.INSTITUTE
+        ? req.user.instituteId || "non-existent-id"
+        : undefined;
+
     const result = await this.subjectService.list({
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 10,
@@ -53,6 +60,7 @@ export class SubjectController {
         typeof req.query.isActive === "string"
           ? req.query.isActive === "true"
           : undefined,
+      instituteId: scopedInstituteId,
     });
 
     return ApiResponse.success(res, result, "Subjects fetched successfully.");

@@ -13,6 +13,8 @@ describe("AI Review API", () => {
   let auth: Awaited<ReturnType<typeof loginAsTeacher>>;
   let accessToken: string;
   let questionId: string;
+  let processingJobId: string;
+
   beforeAll(async () => {
     auth = await loginAsTeacher();
 
@@ -21,6 +23,7 @@ describe("AI Review API", () => {
     const document = await createUploadedDocument(auth.user.id);
 
     const processingJob = await createProcessingJob(document.id);
+    processingJobId = processingJob.id;
 
     const question = await createPendingAIQuestion(
       processingJob.id,
@@ -32,7 +35,7 @@ describe("AI Review API", () => {
 
   it("should fetch pending AI questions", async () => {
     const response = await request(app)
-      .get("/api/ai-review")
+      .get(`/api/ai-review/jobs/${processingJobId}`)
       .set("Authorization", `Bearer ${accessToken}`);
 
     expect(response.status).toBe(200);

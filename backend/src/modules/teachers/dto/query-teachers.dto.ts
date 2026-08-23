@@ -4,4 +4,6 @@ export interface QueryTeachersDto {
   limit?: number;
 
   search?: string;
+
+  instituteId?: string;
 }

@@ -30,6 +30,16 @@ export class AuthController {
     );
   });
 
+  registerInstitute = asyncHandler(async (req: Request, res: Response) => {
+    const result = await this.authService.registerInstitute(req.body);
+
+    return ApiResponse.created(
+      res,
+      result,
+      result.message,
+    );
+  });
+
   login = asyncHandler(async (req: Request, res: Response) => {
     const result = await this.authService.login(req.body);
 

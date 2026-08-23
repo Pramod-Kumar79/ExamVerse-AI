@@ -79,7 +79,7 @@ export class AIReviewService implements IAIReviewService {
       throw new BadRequestError("Only approved questions can be published.");
     }
 
-    if (question.approvedAt) {
+    if (question.publishedQuestionId) {
       throw new ConflictError("Question has already been published.");
     }
 

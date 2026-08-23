@@ -1,13 +1,3 @@
-// import type { IOcrProvider } from "./ocr.provider.interface";
-// import type { OcrResult } from "../ocr.types";
-
-// export class TesseractProvider implements IOcrProvider {
-//   async extractText(_filePath: string): Promise<OcrResult> {
-//     throw new Error("Tesseract OCR not implemented yet.");
-//   }
-// }
-
-
 import { createWorker } from "tesseract.js";
 import { getDocumentProxy, renderPageAsImage } from "unpdf";
 import fs from "fs/promises";

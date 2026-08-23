@@ -16,6 +16,10 @@ export class QuestionRepository implements IQuestionRepository {
   private buildScopeFilter(
     query: QueryQuestionsDto,
   ): Prisma.QuestionWhereInput | null {
+    if (query.instituteId) {
+      return { createdBy: { instituteId: query.instituteId } };
+    }
+
     if (query.scope === "own" && query.ownerId) {
       return { createdById: query.ownerId };
     }

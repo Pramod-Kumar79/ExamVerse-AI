@@ -24,6 +24,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
       id: payload.sub,
       email: payload.email,
       role: payload.role,
+      instituteId: payload.instituteId,
     };
 
     next();

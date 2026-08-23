@@ -54,6 +54,35 @@ export class InstituteService implements IInstituteService {
     };
   }
 
+  async approve(id: string) {
+    await this.getById(id);
+
+    return this.instituteRepository.update(id, {
+      status: "APPROVED",
+      isApproved: true,
+      isSuspended: false,
+    } as any);
+  }
+
+  async suspend(id: string) {
+    await this.getById(id);
+
+    return this.instituteRepository.update(id, {
+      status: "SUSPENDED",
+      isSuspended: true,
+    } as any);
+  }
+
+  async reactivate(id: string) {
+    await this.getById(id);
+
+    return this.instituteRepository.update(id, {
+      status: "APPROVED",
+      isApproved: true,
+      isSuspended: false,
+    } as any);
+  }
+
   async delete(id: string): Promise<void> {
     await this.getById(id);
 

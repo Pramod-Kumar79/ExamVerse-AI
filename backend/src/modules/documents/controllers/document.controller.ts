@@ -48,6 +48,7 @@ export class DocumentController {
   list = asyncHandler(async (req: Request, res: Response) => {
     const isStudent = req.user.role === "STUDENT";
     const isTeacher = req.user.role === "TEACHER";
+    const isInstitute = req.user.role === UserRole.INSTITUTE;
 
     const result = await this.documentService.list({
       page: req.query.page ? Number(req.query.page) : 1,
@@ -63,8 +64,10 @@ export class DocumentController {
           : undefined,
 
       // Students and Teachers only see their own uploads;
-      // Admins/Institutes see the shared pool.
+      // Institutes see their institute's uploads;
+      // Admins see the shared pool.
       uploadedById: isStudent || isTeacher ? req.user.id : undefined,
+      instituteId: isInstitute ? req.user.instituteId || "non-existent-id" : undefined,
       excludeUploaderRole: isStudent || isTeacher ? undefined : UserRole.STUDENT,
     });
 

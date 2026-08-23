@@ -54,7 +54,7 @@ const examController = new ExamController(examService);
 router.post(
   "/",
   authenticate,
-  authorize(UserRole.ADMIN, UserRole.TEACHER),
+  authorize(UserRole.ADMIN, UserRole.TEACHER, UserRole.INSTITUTE),
   validateRequest(createExamSchema),
   examController.create,
 );
@@ -109,7 +109,12 @@ router.get("/practice/mine", authenticate, examController.myPracticeExams);
  *       200:
  *         description: Exams fetched successfully.
  */
-router.get("/", authenticate, authorize(UserRole.ADMIN, UserRole.TEACHER), examController.list);
+router.get(
+  "/",
+  authenticate,
+  authorize(UserRole.ADMIN, UserRole.TEACHER, UserRole.INSTITUTE),
+  examController.list,
+);
 
 
 /**
@@ -162,7 +167,7 @@ router.get("/:id", authenticate, examController.getById);
 router.patch(
   "/:id",
   authenticate,
-  authorize(UserRole.ADMIN, UserRole.TEACHER),
+  authorize(UserRole.ADMIN, UserRole.TEACHER, UserRole.INSTITUTE),
   validateRequest(updateExamSchema),
   examController.update,
 );
@@ -190,37 +195,35 @@ router.patch(
 router.delete(
   "/:id",
   authenticate,
-  authorize(UserRole.ADMIN, UserRole.TEACHER),
+  authorize(UserRole.ADMIN, UserRole.TEACHER, UserRole.INSTITUTE),
   examController.delete,
 );
 
-// NOTE: these four routes previously had no auth middleware at all — fixed
-// alongside the practice-exam work since it touches this same file.
 router.post(
   "/:id/questions",
   authenticate,
-  authorize(UserRole.ADMIN, UserRole.TEACHER),
+  authorize(UserRole.ADMIN, UserRole.TEACHER, UserRole.INSTITUTE),
   examController.attachQuestions,
 );
 
 router.delete(
   "/:id/questions/:questionId",
   authenticate,
-  authorize(UserRole.ADMIN, UserRole.TEACHER),
+  authorize(UserRole.ADMIN, UserRole.TEACHER, UserRole.INSTITUTE),
   examController.removeQuestion,
 );
 
 router.patch(
   "/:id/questions/reorder",
   authenticate,
-  authorize(UserRole.ADMIN, UserRole.TEACHER),
+  authorize(UserRole.ADMIN, UserRole.TEACHER, UserRole.INSTITUTE),
   examController.reorderQuestions,
 );
 
 router.get(
   "/:id/preview",
   authenticate,
-  authorize(UserRole.ADMIN, UserRole.TEACHER),
+  authorize(UserRole.ADMIN, UserRole.TEACHER, UserRole.INSTITUTE),
   examController.preview,
 );
 

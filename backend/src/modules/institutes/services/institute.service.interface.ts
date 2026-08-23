@@ -22,5 +22,11 @@ export interface IInstituteService {
 
   list(query: QueryInstitutesDto): Promise<PaginatedInstitutes>;
 
+  approve(id: string): Promise<Institute>;
+
+  suspend(id: string): Promise<Institute>;
+
+  reactivate(id: string): Promise<Institute>;
+
   delete(id: string): Promise<void>;
 }

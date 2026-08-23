@@ -18,7 +18,7 @@ import { AuthController } from "../controllers";
 import { authenticate } from "../middleware/authenticate";
 import { validateRequest } from "../../../common/middleware/validate-request";
 
-import { loginSchema, registerSchema } from "../schemas/auth.schema";
+import { loginSchema, registerSchema, registerInstituteSchema } from "../schemas/auth.schema";
 
 const router = Router();
 
@@ -54,6 +54,26 @@ router.post(
   "/register",
   validateRequest(registerSchema),
   authController.register,
+);
+
+/**
+ * @openapi
+ * /auth/register-institute:
+ *   post:
+ *     tags:
+ *       - Authentication
+ *     summary: Register a new institute account
+ *     description: Registers an institute account pending admin approval.
+ *     responses:
+ *       201:
+ *         description: Institute registration submitted successfully.
+ *       400:
+ *         description: Validation error.
+ */
+router.post(
+  "/register-institute",
+  validateRequest(registerInstituteSchema),
+  authController.registerInstitute,
 );
 
 /**

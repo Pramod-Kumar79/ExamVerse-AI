@@ -38,11 +38,13 @@ export class InstituteRepository implements IInstituteRepository {
   }
 
   async findMany(query: QueryInstitutesDto): Promise<Institute[]> {
-    const { search } = query;
+    const { search, status, id } = query;
 
     const { page, limit } = resolvePagination(query.page, query.limit);
 
     const where: Prisma.InstituteWhereInput = {
+      ...(id && { id }),
+      ...(status && { status }),
       ...(search && {
         OR: [
           {
@@ -72,9 +74,11 @@ export class InstituteRepository implements IInstituteRepository {
   }
 
   async count(query: QueryInstitutesDto): Promise<number> {
-    const { search } = query;
+    const { search, status, id } = query;
 
     const where: Prisma.InstituteWhereInput = {
+      ...(id && { id }),
+      ...(status && { status }),
       ...(search && {
         OR: [
           {

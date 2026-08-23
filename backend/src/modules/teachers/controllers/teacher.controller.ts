@@ -5,6 +5,8 @@ import { ApiResponse } from "../../../common/response";
 
 import type { ITeacherService } from "../services";
 
+import { UserRole } from "@prisma/client";
+
 export class TeacherController {
   constructor(private readonly teacherService: ITeacherService) {}
 
@@ -44,11 +46,19 @@ export class TeacherController {
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
+    const scopedInstituteId =
+      req.user?.role === UserRole.INSTITUTE
+        ? req.user.instituteId || "non-existent-id"
+        : typeof req.query.instituteId === "string"
+        ? req.query.instituteId
+        : undefined;
+
     const result = await this.teacherService.list({
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 10,
       search:
         typeof req.query.search === "string" ? req.query.search : undefined,
+      instituteId: scopedInstituteId,
     });
 
     return ApiResponse.success(res, result, "Teachers fetched successfully.");

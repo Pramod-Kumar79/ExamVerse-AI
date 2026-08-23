@@ -5,10 +5,16 @@ import { ApiResponse } from "../../../common/response";
 
 import type { ICourseService } from "../services";
 
+import { UserRole } from "@prisma/client";
+
 export class CourseController {
   constructor(private readonly courseService: ICourseService) {}
 
   create = asyncHandler(async (req: Request, res: Response) => {
+    if (req.user?.role === UserRole.INSTITUTE && req.user.instituteId) {
+      req.body.instituteId = req.user.instituteId;
+    }
+
     const course = await this.courseService.create(req.body);
 
     return ApiResponse.success(
@@ -44,6 +50,13 @@ export class CourseController {
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
+    const scopedInstituteId =
+      req.user?.role === UserRole.INSTITUTE
+        ? req.user.instituteId || "non-existent-id"
+        : typeof req.query.instituteId === "string"
+        ? req.query.instituteId
+        : undefined;
+
     const result = await this.courseService.list({
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 10,
@@ -51,10 +64,7 @@ export class CourseController {
       search:
         typeof req.query.search === "string" ? req.query.search : undefined,
 
-      instituteId:
-        typeof req.query.instituteId === "string"
-          ? req.query.instituteId
-          : undefined,
+      instituteId: scopedInstituteId,
 
       subjectId:
         typeof req.query.subjectId === "string"

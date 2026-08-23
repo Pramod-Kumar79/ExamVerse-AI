@@ -59,6 +59,11 @@ export class TeacherRepository implements ITeacherRepository {
     const { page, limit } = resolvePagination(query.page, query.limit);
 
     const where: Prisma.TeacherProfileWhereInput = {
+      ...(query.instituteId && {
+        user: {
+          instituteId: query.instituteId,
+        },
+      }),
       ...(query.search && {
         OR: [
           {
@@ -108,6 +113,11 @@ export class TeacherRepository implements ITeacherRepository {
 
   async count(query: QueryTeachersDto): Promise<number> {
     const where: Prisma.TeacherProfileWhereInput = {
+      ...(query.instituteId && {
+        user: {
+          instituteId: query.instituteId,
+        },
+      }),
       ...(query.search && {
         OR: [
           {

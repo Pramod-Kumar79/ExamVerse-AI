@@ -8,4 +8,6 @@ export interface QueryStudentsDto {
   semester?: number;
 
   search?: string;
+
+  instituteId?: string;
 }

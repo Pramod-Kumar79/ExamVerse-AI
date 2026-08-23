@@ -3,4 +3,5 @@ export interface QuerySubjectsDto {
   limit?: number;
   search?: string;
   isActive?: boolean;
+  instituteId?: string;
 }

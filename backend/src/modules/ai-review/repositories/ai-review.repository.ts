@@ -10,6 +10,8 @@ import type { UpdateAIQuestionDto } from "../dto";
 import { prisma } from "../../../lib/prisma";
 import type { QuestionResponse } from "../../ai/validator";
 
+import { NotFoundError, ConflictError } from "../../../common/errors";
+
 import { IAIReviewRepository } from "./ai-review.repository.interface";
 import { mapQuestionType } from "../mappers/question-type.mapper";
 
@@ -205,11 +207,11 @@ export class AIReviewRepository implements IAIReviewRepository {
   });
 
     if (!extracted) {
-      throw new Error("AI extracted question not found.");
+      throw new NotFoundError("AI extracted question not found.");
     }
 
-    if (extracted.status === AIReviewStatus.APPROVED) {
-      throw new Error("Question has already been published.");
+    if (extracted.publishedQuestionId) {
+      throw new ConflictError("Question has already been published.");
     }
 
     return prisma.$transaction(async (tx) => {

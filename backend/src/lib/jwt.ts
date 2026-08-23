@@ -7,6 +7,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: UserRole;
+  instituteId?: string | null;
 }
 
 export class Jwt {

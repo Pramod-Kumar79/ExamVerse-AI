@@ -277,7 +277,7 @@ router.get("/:id", authenticate, instituteController.getById);
 router.post(
   "/",
   authenticate,
-  authorize(UserRole.ADMIN, UserRole.INSTITUTE),
+  authorize(UserRole.ADMIN),
   validateRequest(createInstituteSchema),
   instituteController.create,
 );
@@ -344,6 +344,27 @@ router.get(
  *         description: Institute updated successfully.
  */
 router.patch(
+  "/:id/approve",
+  authenticate,
+  authorize(UserRole.ADMIN),
+  instituteController.approve,
+);
+
+router.patch(
+  "/:id/suspend",
+  authenticate,
+  authorize(UserRole.ADMIN),
+  instituteController.suspend,
+);
+
+router.patch(
+  "/:id/reactivate",
+  authenticate,
+  authorize(UserRole.ADMIN),
+  instituteController.reactivate,
+);
+
+router.patch(
   "/:id",
   authenticate,
   authorize(UserRole.ADMIN, UserRole.INSTITUTE),
@@ -351,26 +372,6 @@ router.patch(
   instituteController.update,
 );
 
-
-/**
- * @openapi
- * /institutes/{id}:
- *   delete:
- *     tags:
- *       - Institutes
- *     summary: Delete institute
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Institute deleted successfully.
- */
 router.delete(
   "/:id",
   authenticate,

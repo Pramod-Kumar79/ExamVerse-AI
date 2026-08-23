@@ -29,4 +29,6 @@ export interface QueryDocumentsDto {
   // shared teacher/admin document list never shows a student's personal
   // uploads.
   excludeUploaderRole?: UserRole;
+
+  instituteId?: string;
 }

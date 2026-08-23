@@ -160,6 +160,10 @@ export class DocumentRepository implements IDocumentRepository {
 
       uploadedById: query.uploadedById,
 
+      ...(query.instituteId && {
+        uploadedBy: { instituteId: query.instituteId },
+      }),
+
       ...(query.excludeUploaderRole && {
         uploadedBy: { role: { not: query.excludeUploaderRole } },
       }),
@@ -201,6 +205,10 @@ export class DocumentRepository implements IDocumentRepository {
       status: query.status,
 
       uploadedById: query.uploadedById,
+
+      ...(query.instituteId && {
+        uploadedBy: { instituteId: query.instituteId },
+      }),
 
       ...(query.excludeUploaderRole && {
         uploadedBy: { role: { not: query.excludeUploaderRole } },

@@ -76,6 +76,22 @@ export const registerSchema = z
   .strict();
 
 /**
+ * Register Institute Schema
+ */
+export const registerInstituteSchema = z
+  .object({
+    instituteName: z.string().trim().min(2, "Institute name must be at least 2 characters."),
+    instituteCode: z.string().trim().min(2, "Institute code must be at least 2 characters."),
+    name: nameSchema,
+    email: emailSchema,
+    password: passwordSchema,
+    phone: z.string().optional(),
+    website: z.string().optional(),
+    address: z.string().optional(),
+  })
+  .strict();
+
+/**
  * Login Schema
  */
 export const loginSchema = z
@@ -98,4 +114,5 @@ export { emailSchema, nameSchema, passwordSchema };
  * Inferred Types
  */
 export type RegisterSchema = z.infer<typeof registerSchema>;
+export type RegisterInstituteSchema = z.infer<typeof registerInstituteSchema>;
 export type LoginSchema = z.infer<typeof loginSchema>;

@@ -124,7 +124,7 @@ import { env } from "./config/env";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger";
 
-import { errorHandler } from "./common/middleware";
+import { errorHandler, authRateLimiter, aiRateLimiter } from "./common/middleware";
 import { authRoutes } from "./modules/auth/routes";
 import { userRoutes } from "./modules/users/routes";
 import { instituteRoutes } from "./modules/institutes/routes";
@@ -191,7 +191,7 @@ app.get("/api/docs-json", (_req, res) => {
 |--------------------------------------------------------------------------
 */
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRateLimiter, authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/institutes", instituteRoutes);
 app.use("/api/subjects", subjectRoutes);
@@ -204,9 +204,9 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/processing-jobs", processingJobRoutes);
 app.use("/api/pdf-processing", pdfProcessingRoutes);
-app.use("/api/ai", aiRoutes);
+app.use("/api/ai", aiRateLimiter, aiRoutes);
 app.use("/api/ai-review", aiReviewRoutes);
-app.use("/api/ocr", ocrRoutes);
+app.use("/api/ocr", aiRateLimiter, ocrRoutes);
 app.use("/api/exam-attempts", examAttemptRoutes);
 app.use("/api/evaluation", evaluationRoutes);
 app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

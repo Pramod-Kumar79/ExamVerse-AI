@@ -18,6 +18,10 @@ import type {
 import type { LoginDto } from "../dto/login.dto";
 import type { RegisterDto } from "../dto/register.dto";
 
+import { prisma } from "../../../lib/prisma";
+import { UserRole } from "@prisma/client";
+import type { RegisterInstituteDto } from "../dto/register-institute.dto";
+
 export class AuthService implements IAuthService {
   constructor(
     private readonly userRepository: IUserRepository,
@@ -32,6 +36,7 @@ export class AuthService implements IAuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      instituteId: user.instituteId,
     };
 
     const accessToken = Jwt.signAccessToken(payload);
@@ -75,6 +80,61 @@ export class AuthService implements IAuthService {
     };
   }
 
+  async registerInstitute(
+    dto: RegisterInstituteDto,
+  ): Promise<{ message: string; instituteId: string }> {
+    const existingUser = await this.userRepository.findByEmail(dto.email);
+
+    if (existingUser) {
+      throw new ConflictError("Email is already registered.");
+    }
+
+    const existingInstitute = await prisma.institute.findUnique({
+      where: { code: dto.instituteCode },
+    });
+
+    if (existingInstitute) {
+      throw new ConflictError("Institute code is already registered.");
+    }
+
+    const passwordHash = await Bcrypt.hash(dto.password);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const institute = await tx.institute.create({
+        data: {
+          name: dto.instituteName,
+          code: dto.instituteCode,
+          email: dto.email,
+          phone: dto.phone,
+          website: dto.website,
+          address: dto.address,
+          status: "PENDING",
+          isApproved: false,
+          isSuspended: false,
+        },
+      });
+
+      await tx.user.create({
+        data: {
+          name: dto.name,
+          email: dto.email,
+          passwordHash,
+          role: UserRole.INSTITUTE,
+          instituteId: institute.id,
+          isActive: true,
+        },
+      });
+
+      return institute;
+    });
+
+    return {
+      message:
+        "Institute registration submitted successfully! Your account is pending admin approval. You can login once an administrator approves your institute.",
+      instituteId: result.id,
+    };
+  }
+
   async login(dto: LoginDto): Promise<AuthResult> {
     const user = await this.userRepository.findByEmail(dto.email);
 
@@ -99,6 +159,27 @@ export class AuthService implements IAuthService {
 
     if (!isPasswordValid) {
       throw new UnauthorizedError("Invalid email or password.");
+    }
+
+    // If user is associated with an institute, verify institute status & approval
+    if (user.instituteId) {
+      const institute = await prisma.institute.findUnique({
+        where: { id: user.instituteId },
+      });
+
+      if (institute) {
+        if (institute.isSuspended || institute.status === "SUSPENDED") {
+          throw new UnauthorizedError(
+            "Your institute account has been suspended. Please contact platform support.",
+          );
+        }
+
+        if (!institute.isApproved || institute.status === "PENDING") {
+          throw new UnauthorizedError(
+            "Your institute account is pending admin approval. Please wait for admin approval before logging in.",
+          );
+        }
+      }
     }
 
     const tokens = await this.generateTokens(user);

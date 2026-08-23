@@ -50,6 +50,11 @@ export class StudentRepository implements IStudentRepository {
     const where: Prisma.StudentProfileWhereInput = {
       batchId: query.batchId,
       semester: query.semester,
+      ...(query.instituteId && {
+        user: {
+          instituteId: query.instituteId,
+        },
+      }),
 
       ...(query.search && {
         OR: [
@@ -97,6 +102,11 @@ export class StudentRepository implements IStudentRepository {
     const where: Prisma.StudentProfileWhereInput = {
       batchId: query.batchId,
       semester: query.semester,
+      ...(query.instituteId && {
+        user: {
+          instituteId: query.instituteId,
+        },
+      }),
 
       ...(query.search && {
         OR: [

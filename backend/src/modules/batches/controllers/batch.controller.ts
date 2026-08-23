@@ -5,10 +5,16 @@ import { ApiResponse } from "../../../common/response";
 
 import type { IBatchService } from "../services";
 
+import { UserRole } from "@prisma/client";
+
 export class BatchController {
   constructor(private readonly batchService: IBatchService) {}
 
   create = asyncHandler(async (req: Request, res: Response) => {
+    if (req.user?.role === UserRole.INSTITUTE && req.user.instituteId) {
+      req.body.instituteId = req.user.instituteId;
+    }
+
     const batch = await this.batchService.create(req.body);
 
     return ApiResponse.success(res, batch, "Batch created successfully.", 201);
@@ -39,15 +45,19 @@ export class BatchController {
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
+    const scopedInstituteId =
+      req.user?.role === UserRole.INSTITUTE
+        ? req.user.instituteId || "non-existent-id"
+        : typeof req.query.instituteId === "string"
+        ? req.query.instituteId
+        : undefined;
+
     const result = await this.batchService.list({
       page: req.query.page ? Number(req.query.page) : 1,
       limit: req.query.limit ? Number(req.query.limit) : 10,
       search:
         typeof req.query.search === "string" ? req.query.search : undefined,
-      instituteId:
-        typeof req.query.instituteId === "string"
-          ? req.query.instituteId
-          : undefined,
+      instituteId: scopedInstituteId,
       academicYear:
         typeof req.query.academicYear === "string"
           ? req.query.academicYear

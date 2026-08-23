@@ -112,19 +112,25 @@ model User {
 }
 
 model Institute {
-  id        String   @id @default(cuid())
-  name      String
-  code      String   @unique
-  email     String?
-  phone     String?
-  website   String?
-  logo      String?
-  address   String?
-  users     User[]
-  batches   Batch[]
-  courses   Course[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  email       String?
+  phone       String?
+  website     String?
+  logo        String?
+  address     String?
+  status      String   @default("APPROVED")
+  isApproved  Boolean  @default(true)
+  isSuspended Boolean  @default(false)
+  users       User[]
+  batches     Batch[]
+  courses     Course[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model RefreshToken {
@@ -161,6 +167,8 @@ model Batch {
   courses   Course[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
+
+  @@index([instituteId, isActive])
 }
 
 model Subject {
@@ -172,6 +180,8 @@ model Subject {
   courses     Course[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
 }
 
 model StudentProfile {
@@ -185,6 +195,8 @@ model StudentProfile {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   examAttempts ExamAttempt[]
+
+  @@index([batchId])
 }
 
 model TeacherProfile {
@@ -231,6 +243,9 @@ model Course {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([instituteId, teacherId, batchId])
+  @@index([isActive])
 }
 
 model Exam {
@@ -244,9 +259,6 @@ model Exam {
   courseId String?
   course   Course? @relation(fields: [courseId], references: [id])
 
-  // For student self-created practice exams, which aren't tied to any
-  // course. createdByUserId tracks who made it (student or staff);
-  // isPractice distinguishes these from real course exams.
   createdByUserId String?
   createdBy       User?   @relation(fields: [createdByUserId], references: [id])
   isPractice      Boolean @default(false)
@@ -279,6 +291,10 @@ model Exam {
 
   examQuestions ExamQuestion[]
   attempts      ExamAttempt[]
+
+  @@index([createdByUserId, isPractice])
+  @@index([courseId, isPublished])
+  @@index([status, startTime, endTime])
 }
 
 model Question {
@@ -330,6 +346,10 @@ model Question {
   answers StudentAnswer[]
 
   aiExtractions AIExtractedQuestion[]
+
+  @@index([createdById, isActive])
+  @@index([type, difficulty])
+  @@index([chapter, topic])
 }
 
 model ExamQuestion {
@@ -389,6 +409,9 @@ model ExamAttempt {
   createdAt DateTime @default(now())
 
   answers StudentAnswer[]
+
+  @@index([studentId, examId])
+  @@index([status])
 }
 
 model StudentAnswer {

@@ -5,6 +5,8 @@ import { ApiResponse } from "../../../common/response";
 
 import type { IQuestionService } from "../services";
 
+import { UserRole } from "@prisma/client";
+
 export class QuestionController {
   constructor(private readonly questionService: IQuestionService) {}
 
@@ -52,6 +54,7 @@ export class QuestionController {
   list = asyncHandler(async (req: Request, res: Response) => {
     const isStudent = req.user.role === "STUDENT";
     const isTeacher = req.user.role === "TEACHER";
+    const isInstitute = req.user.role === UserRole.INSTITUTE;
     // Students normally only see their own personal bank. When picking
     // questions for a practice exam, they can explicitly ask to also see
     // the shared teacher/admin bank via ?scope=own_and_shared — this never
@@ -108,13 +111,15 @@ export class QuestionController {
           : undefined,
 
       // Students and Teachers see their own personal bank.
-      // Admins/Institutes see the shared/all bank.
+      // Institutes see their institute's question bank.
+      // Admins see the shared/all bank.
       scope: isStudent || isTeacher
         ? wantsCombinedScope
           ? "own_and_shared"
           : "own"
         : "shared",
       ownerId: isStudent || isTeacher ? req.user.id : undefined,
+      instituteId: isInstitute ? req.user.instituteId || "non-existent-id" : undefined,
     });
 
     return ApiResponse.success(res, result, "Questions fetched successfully.");
